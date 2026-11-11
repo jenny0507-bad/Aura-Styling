@@ -1,0 +1,6 @@
+{
+  "name": "AURA | AI Wardrobe & Personal Stylist",
+  "description": "Aesthetic Pinterest-inspired personal digital wardrobe and AI stylist with occasion-based outfit generation, personal virtual try-on, and complete beauty & styling recommendations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
