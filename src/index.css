@@ -1,20 +1,124 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
     --font-serif: 'Cormorant Garamond', Georgia, serif;
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+    /* Light Mode (Original Warm Editorial Palette) */
+    --aura-canvas: #FAF8F5;
+    --aura-surface: #FFFFFF;
+    --aura-surface-alt: #F7F4EE;
+    --aura-surface-warm: #F4EFEA;
+    --aura-surface-chip: #EFEBE4;
+    --aura-surface-hover: #F2ECE4;
+    --aura-header-bg: rgba(250, 248, 245, 0.9);
+    --aura-text-primary: #24211E;
+    --aura-text-strong: #1A1816;
+    --aura-text-body: #4A4238;
+    --aura-text-secondary: #5A5246;
+    --aura-text-muted: #6E665B;
+    --aura-text-subtle: #7A7165;
+    --aura-text-faint: #8C8275;
+    --aura-border: #EAE3D9;
+    --aura-border-light: #F2ECE4;
+    --aura-border-strong: #DDD6CB;
+    --aura-border-dashed: #DCD5C9;
+    --aura-btn-primary: #24211E;
+    --aura-btn-primary-hover: #38332E;
+    --aura-btn-primary-text: #FFFFFF;
+    --aura-accent: #9A7B4F;
+    --aura-accent-hover: #866A42;
+    --aura-accent-gold: #C8A876;
+    --aura-selection-bg: #E8DCC4;
+    --aura-selection-text: #1A1816;
+    --aura-scrollbar: #E5DFD7;
+    --aura-scrollbar-hover: #CFC7BC;
+  }
+
+  .dark {
+    /* Dark Mode (Obsidian & Champagne Luxury Editorial) */
+    --aura-canvas: #12100E;
+    --aura-surface: #1B1815;
+    --aura-surface-alt: #221E1B;
+    --aura-surface-warm: #26211D;
+    --aura-surface-chip: #2A2520;
+    --aura-surface-hover: #2E2823;
+    --aura-header-bg: rgba(18, 16, 14, 0.9);
+    --aura-text-primary: #F3EFE9;
+    --aura-text-strong: #FAF8F5;
+    --aura-text-body: #DFD8CE;
+    --aura-text-secondary: #CEC6BA;
+    --aura-text-muted: #B0A79B;
+    --aura-text-subtle: #9E9487;
+    --aura-text-faint: #8A8073;
+    --aura-border: #2D2722;
+    --aura-border-light: #25201C;
+    --aura-border-strong: #3B342D;
+    --aura-border-dashed: #453D35;
+    --aura-btn-primary: #EFE9DF;
+    --aura-btn-primary-hover: #FFFFFF;
+    --aura-btn-primary-text: #1A1816;
+    --aura-accent: #C8A876;
+    --aura-accent-hover: #D6BA8D;
+    --aura-accent-gold: #D4B483;
+    --aura-selection-bg: #4A3E2F;
+    --aura-selection-text: #FAF8F5;
+    --aura-scrollbar: #36302A;
+    --aura-scrollbar-hover: #4B433B;
+  }
+
+  .blush {
+    /* Blush Silk Mode (Soft Rose & Dusty Mauve Editorial) */
+    --aura-canvas: #FDF7F6;
+    --aura-surface: #FFFFFF;
+    --aura-surface-alt: #FAF0EE;
+    --aura-surface-warm: #F6E9E6;
+    --aura-surface-chip: #F2E3E0;
+    --aura-surface-hover: #F5E7E4;
+    --aura-header-bg: rgba(253, 247, 246, 0.9);
+    --aura-text-primary: #2D2022;
+    --aura-text-strong: #221719;
+    --aura-text-body: #523E41;
+    --aura-text-secondary: #654E52;
+    --aura-text-muted: #7B6266;
+    --aura-text-subtle: #886E72;
+    --aura-text-faint: #9A7F83;
+    --aura-border: #EEDAD7;
+    --aura-border-light: #F6E9E6;
+    --aura-border-strong: #E2C9C5;
+    --aura-border-dashed: #DFC3BF;
+    --aura-btn-primary: #3A2629;
+    --aura-btn-primary-hover: #4F3539;
+    --aura-btn-primary-text: #FFFFFF;
+    --aura-accent: #A8646C;
+    --aura-accent-hover: #91525A;
+    --aura-accent-gold: #C88A8E;
+    --aura-selection-bg: #F2D7D3;
+    --aura-selection-text: #221719;
+    --aura-scrollbar: #E7D0CC;
+    --aura-scrollbar-hover: #D5B8B3;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #FAF8F5;
-    color: #24211E;
+    background-color: var(--aura-canvas);
+    color: var(--aura-text-primary);
     -webkit-font-smoothing: antialiased;
+    transition: background-color 200ms ease, color 200ms ease;
   }
 
   h1, h2, h3, .font-editorial {
     font-family: var(--font-serif);
+  }
+
+  select, input, textarea {
+    color-scheme: light;
+  }
+
+  .dark select, .dark input, .dark textarea {
+    color-scheme: dark;
   }
 }
 
@@ -27,9 +131,9 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #E5DFD7;
+  background: var(--aura-scrollbar);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #CFC7BC;
+  background: var(--aura-scrollbar-hover);
 }

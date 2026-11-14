@@ -1,69 +1,53 @@
 import { useState, useEffect, useCallback } from 'react';
 import { WardrobeItem, Outfit, UserProfile } from '../types/wardrobe';
-import {
-  INITIAL_WARDROBE_ITEMS,
-  INITIAL_SAVED_LOOKS,
-  INITIAL_USER_PROFILE,
-} from '../data/initialWardrobe';
+import { EMPTY_USER_PROFILE } from '../data/initialWardrobe';
 
 const STORAGE_KEYS = {
-  WARDROBE: 'aura_wardrobe_items_v1',
-  LOOKS: 'aura_saved_looks_v1',
-  PLANNER: 'aura_weekly_planner_v1',
-  PROFILE: 'aura_user_profile_v1',
+  WARDROBE: 'aura_wardrobe_items_v2',
+  LOOKS: 'aura_saved_looks_v2',
+  PLANNER: 'aura_weekly_planner_v2',
+  PROFILE: 'aura_user_profile_v2',
 };
 
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved) return JSON.parse(saved) as T;
+  } catch (e) {
+    console.warn(`Failed to load ${key} from localStorage:`, e);
+  }
+  return fallback;
+}
+
 export function useWardrobe() {
-  const [items, setItems] = useState<WardrobeItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.WARDROBE);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Failed to load wardrobe from localStorage:', e);
-    }
-    return INITIAL_WARDROBE_ITEMS;
-  });
+  const [items, setItems] = useState<WardrobeItem[]>(() =>
+    loadFromStorage<WardrobeItem[]>(STORAGE_KEYS.WARDROBE, [])
+  );
 
-  const [looks, setLooks] = useState<Outfit[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.LOOKS);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Failed to load looks from localStorage:', e);
-    }
-    return INITIAL_SAVED_LOOKS;
-  });
+  const [looks, setLooks] = useState<Outfit[]>(() =>
+    loadFromStorage<Outfit[]>(STORAGE_KEYS.LOOKS, [])
+  );
 
-  const [planner, setPlanner] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PLANNER);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Failed to load planner from localStorage:', e);
-    }
-    return {
-      Wednesday: 'look-1',
-      Friday: 'look-2',
-    };
-  });
+  const [planner, setPlanner] = useState<Record<string, string>>(() =>
+    loadFromStorage<Record<string, string>>(STORAGE_KEYS.PLANNER, {})
+  );
 
-  const [profile, setProfile] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PROFILE);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Failed to load profile from localStorage:', e);
-    }
-    return INITIAL_USER_PROFILE;
-  });
+  const [profile, setProfile] = useState<UserProfile>(() =>
+    loadFromStorage<UserProfile>(STORAGE_KEYS.PROFILE, EMPTY_USER_PROFILE)
+  );
 
-  // Sync to localStorage
+  // Sync to localStorage & backend
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEYS.WARDROBE, JSON.stringify(items));
     } catch (e) {
       console.warn('Storage quota exceeded or error:', e);
     }
+    fetch('/api/wardrobe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    }).catch(() => {});
   }, [items]);
 
   useEffect(() => {
@@ -72,6 +56,11 @@ export function useWardrobe() {
     } catch (e) {
       console.warn('Storage error:', e);
     }
+    fetch('/api/looks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ looks }),
+    }).catch(() => {});
   }, [looks]);
 
   useEffect(() => {
@@ -80,6 +69,11 @@ export function useWardrobe() {
     } catch (e) {
       console.warn('Storage error:', e);
     }
+    fetch('/api/planner', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planner }),
+    }).catch(() => {});
   }, [planner]);
 
   useEffect(() => {
@@ -88,27 +82,12 @@ export function useWardrobe() {
     } catch (e) {
       console.warn('Storage error:', e);
     }
+    fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile }),
+    }).catch(() => {});
   }, [profile]);
-
-  // Sync with server if online
-  useEffect(() => {
-    fetch('/api/wardrobe')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
-          // If server has items, keep the richer set
-          setItems((prev) => (prev.length >= data.items.length ? prev : data.items));
-        } else {
-          // Push initial items to server
-          fetch('/api/wardrobe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items }),
-          }).catch(() => {});
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   const addItem = useCallback((item: WardrobeItem) => {
     setItems((prev) => [item, ...prev]);
@@ -172,6 +151,13 @@ export function useWardrobe() {
 
   const deleteLook = useCallback((id: string) => {
     setLooks((prev) => prev.filter((l) => l.id !== id));
+    setPlanner((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((day) => {
+        if (next[day] === id) delete next[day];
+      });
+      return next;
+    });
   }, []);
 
   const toggleLookFavorite = useCallback((id: string) => {
@@ -199,13 +185,12 @@ export function useWardrobe() {
     setProfile((prev) => ({ ...prev, ...updated }));
   }, []);
 
-  const resetToSampleWardrobe = useCallback(() => {
-    setItems(INITIAL_WARDROBE_ITEMS);
-    setLooks(INITIAL_SAVED_LOOKS);
-    setProfile(INITIAL_USER_PROFILE);
-    localStorage.removeItem(STORAGE_KEYS.WARDROBE);
-    localStorage.removeItem(STORAGE_KEYS.LOOKS);
-    localStorage.removeItem(STORAGE_KEYS.PROFILE);
+  const clearAllData = useCallback(() => {
+    setItems([]);
+    setLooks([]);
+    setPlanner({});
+    setProfile(EMPTY_USER_PROFILE);
+    Object.values(STORAGE_KEYS).forEach((k) => localStorage.removeItem(k));
   }, []);
 
   return {
@@ -225,6 +210,6 @@ export function useWardrobe() {
     scheduleOutfit,
     unscheduleOutfit,
     updateProfile,
-    resetToSampleWardrobe,
+    clearAllData,
   };
 }

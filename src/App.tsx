@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Navbar, TabType } from './components/Navbar';
 import { UploadModal } from './components/UploadModal';
+import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { HomeView } from './components/views/HomeView';
 import { WardrobeView } from './components/views/WardrobeView';
 import { StylistView } from './components/views/StylistView';
@@ -10,13 +11,17 @@ import { LooksView } from './components/views/LooksView';
 import { PlannerView } from './components/views/PlannerView';
 import { ProfileView } from './components/views/ProfileView';
 import { useWardrobe } from './hooks/useWardrobe';
-import { Outfit, WardrobeItem } from './types/wardrobe';
+import { useTheme } from './hooks/useTheme';
+import { Outfit, AestheticType } from './types/wardrobe';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedOutfitForTryOn, setSelectedOutfitForTryOn] = useState<Outfit | null>(null);
   const [stylistInitialPrioritizeUnused, setStylistInitialPrioritizeUnused] = useState(false);
+  const [stylistInitialAesthetic, setStylistInitialAesthetic] = useState<AestheticType | null>(null);
+
+  const { themeMode, setThemeMode } = useTheme();
 
   const {
     items,
@@ -35,7 +40,7 @@ export default function App() {
     scheduleOutfit,
     unscheduleOutfit,
     updateProfile,
-    resetToSampleWardrobe,
+    clearAllData,
   } = useWardrobe();
 
   const handleSelectOutfitForTryOn = (outfit: Outfit) => {
@@ -45,6 +50,13 @@ export default function App() {
 
   const handleStyleUnused = () => {
     setStylistInitialPrioritizeUnused(true);
+    setStylistInitialAesthetic(null);
+    setActiveTab('stylist');
+  };
+
+  const handleSelectAesthetic = (aesthetic: AestheticType) => {
+    setStylistInitialAesthetic(aesthetic);
+    setStylistInitialPrioritizeUnused(false);
     setActiveTab('stylist');
   };
 
@@ -52,14 +64,21 @@ export default function App() {
     setIsUploadOpen(true);
   };
 
+  const handleTabChange = (tab: TabType) => {
+    if (tab !== 'stylist') {
+      setStylistInitialPrioritizeUnused(false);
+      setStylistInitialAesthetic(null);
+    }
+    setActiveTab(tab);
+  };
+
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#24211E] flex flex-col font-sans selection:bg-[#EAE1D3] selection:text-[#1A1816]">
+    <div className="min-h-screen bg-[var(--aura-canvas)] text-[var(--aura-text-primary)] flex flex-col font-sans selection:bg-[var(--aura-selection-bg)] selection:text-[var(--aura-selection-text)] transition-colors duration-200">
       {/* 3-Zone Top Navigation Bar */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         onOpenUpload={handleOpenUpload}
-        itemCount={items.length}
       />
 
       {/* Main Content Area */}
@@ -68,9 +87,12 @@ export default function App() {
           <HomeView
             items={items}
             looks={looks}
-            onNavigate={setActiveTab}
+            planner={planner}
+            onNavigate={handleTabChange}
+            onOpenUpload={handleOpenUpload}
             onSelectOutfitForTryOn={handleSelectOutfitForTryOn}
             onStyleUnused={handleStyleUnused}
+            onSelectAesthetic={handleSelectAesthetic}
             onLogWear={logWear}
           />
         )}
@@ -93,8 +115,10 @@ export default function App() {
             onSelectForTryOn={handleSelectOutfitForTryOn}
             onSaveLook={saveLook}
             onScheduleLook={scheduleOutfit}
+            onOpenUpload={handleOpenUpload}
             savedLooks={looks}
             initialPrioritizeUnused={stylistInitialPrioritizeUnused}
+            initialAesthetic={stylistInitialAesthetic}
           />
         )}
 
@@ -108,6 +132,8 @@ export default function App() {
               updateProfile({ fullBodyPhotoUrl: photoUrl, avatarUrl: photoUrl })
             }
             onSelectOutfit={setSelectedOutfitForTryOn}
+            onSaveLook={saveLook}
+            onNavigateToStylist={() => handleTabChange('stylist')}
           />
         )}
 
@@ -127,6 +153,7 @@ export default function App() {
             onDeleteLook={deleteLook}
             onToggleLookFavorite={toggleLookFavorite}
             onScheduleLook={scheduleOutfit}
+            onNavigateToStylist={() => handleTabChange('stylist')}
           />
         )}
 
@@ -139,16 +166,17 @@ export default function App() {
             onUnscheduleOutfit={unscheduleOutfit}
             onLogOutfitWorn={logOutfitWorn}
             onSelectForTryOn={handleSelectOutfitForTryOn}
-            onNavigateToStylist={() => setActiveTab('stylist')}
+            onNavigateToStylist={() => handleTabChange('stylist')}
           />
         )}
 
         {activeTab === 'profile' && (
           <ProfileView
             profile={profile}
-            wardrobe={items}
             onUpdateProfile={updateProfile}
-            onResetToSample={resetToSampleWardrobe}
+            onClearAllData={clearAllData}
+            themeMode={themeMode}
+            onChangeThemeMode={setThemeMode}
           />
         )}
       </main>
@@ -160,45 +188,52 @@ export default function App() {
         onSave={addItem}
       />
 
+      {/* Quick Theme Mode Switcher */}
+      <ThemeSwitcher
+        themeMode={themeMode}
+        onChangeMode={setThemeMode}
+        variant="floating"
+      />
+
       {/* Luxury Editorial Footer */}
-      <footer className="border-t border-[#EAE3D9] bg-[#F7F4EE] py-10 mt-16 text-xs text-[#7A7165]">
+      <footer className="border-t border-[var(--aura-border)] bg-[var(--aura-surface-alt)] py-10 mt-16 text-xs text-[var(--aura-text-subtle)] transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="font-editorial text-lg tracking-widest text-[#24211E] font-medium">
+            <span className="font-editorial text-lg tracking-widest text-[var(--aura-text-primary)] font-medium">
               A U R A
             </span>
-            <span className="text-[#DDD6CB]">|</span>
+            <span className="text-[var(--aura-border-strong)]">|</span>
             <span>Personal Digital Wardrobe & AI Stylist</span>
           </div>
 
           <div className="flex items-center gap-6">
             <button
-              onClick={() => setActiveTab('wardrobe')}
-              className="hover:text-[#24211E] transition-colors cursor-pointer"
+              onClick={() => handleTabChange('wardrobe')}
+              className="hover:text-[var(--aura-text-primary)] transition-colors cursor-pointer"
             >
-              My Wardrobe ({items.length})
+              My Wardrobe
             </button>
             <button
-              onClick={() => setActiveTab('stylist')}
-              className="hover:text-[#24211E] transition-colors cursor-pointer"
+              onClick={() => handleTabChange('stylist')}
+              className="hover:text-[var(--aura-text-primary)] transition-colors cursor-pointer"
             >
               Occasion Stylist
             </button>
             <button
-              onClick={() => setActiveTab('tryon')}
-              className="hover:text-[#24211E] transition-colors cursor-pointer"
+              onClick={() => handleTabChange('tryon')}
+              className="hover:text-[var(--aura-text-primary)] transition-colors cursor-pointer"
             >
               Virtual Try-On
             </button>
             <button
-              onClick={() => setActiveTab('profile')}
-              className="hover:text-[#24211E] transition-colors cursor-pointer"
+              onClick={() => handleTabChange('profile')}
+              className="hover:text-[var(--aura-text-primary)] transition-colors cursor-pointer"
             >
               Profile
             </button>
           </div>
 
-          <div className="text-[11px] text-[#8C8275]">
+          <div className="text-[11px] text-[var(--aura-text-faint)]">
             Styling exclusively with your uploaded pieces.
           </div>
         </div>
